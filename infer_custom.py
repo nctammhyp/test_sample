@@ -36,7 +36,7 @@ raw_img = cv2.imread('/kaggle/working/test_sample/dataset/frame_rgb_2.png')
 # raw_img = cv2.cvtColor(raw_img, cv2.COLOR_BGR2RGB)
 
 # Perform inference
-depth = model.infer_image(raw_img)  # HxW raw depth map
+depth, distill = model.infer_image(raw_img)  # HxW raw depth map
 # depth = 255 - depth
 
 # # Optionally, visualize the depth map
@@ -44,4 +44,9 @@ depth = model.infer_image(raw_img)  # HxW raw depth map
 # depth_colormap = cv2.applyColorMap(depth_normalized.astype('uint8'), cv2.COLORMAP_PLASMA)
 # cv2_imshow(depth_colormap)
 
+
+print("--------------------- depth --------------------")
 print(depth)
+
+print("--------------------- distill --------------------")
+print(distill)
