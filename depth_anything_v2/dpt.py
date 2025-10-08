@@ -186,7 +186,8 @@ class DepthAnythingV2(nn.Module):
 
         distill_feat = depth
 
-        depth = F.relu(depth)
+        # depth = F.relu(depth)
+        depth = F.sigmoid(depth)*self.max_depth
         
         return depth.squeeze(1), distill_feat
     
@@ -196,7 +197,7 @@ class DepthAnythingV2(nn.Module):
         
         depth, distill_feat = self.forward(image)
 
-        print(distill_feat)
+        # print(distill_feat)
         
         depth = F.interpolate(depth[:, None], (h, w), mode="bilinear", align_corners=True)[0, 0]
         
