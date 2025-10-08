@@ -109,9 +109,8 @@ class DPTHead(nn.Module):
         self.scratch.output_conv2 = nn.Sequential(
             nn.Conv2d(head_features_1 // 2, head_features_2, kernel_size=3, stride=1, padding=1),
             nn.ReLU(True),
-            nn.Conv2d(head_features_2, 1, kernel_size=1, stride=1, padding=0),
-            nn.ReLU(True),
-            nn.Identity(),
+            nn.Conv2d(head_features_2, 1, kernel_size=1, stride=1, padding=0)
+            # nn.Sigmoid()
         )
     
     def forward(self, out_features, patch_h, patch_w):
@@ -157,7 +156,8 @@ class DepthAnythingV2(nn.Module):
         features=256, 
         out_channels=[256, 512, 1024, 1024], 
         use_bn=False, 
-        use_clstoken=False
+        use_clstoken=False,
+        max_depth=20.0
     ):
         super(DepthAnythingV2, self).__init__()
         
@@ -167,6 +167,8 @@ class DepthAnythingV2(nn.Module):
             'vitl': [4, 11, 17, 23], 
             'vitg': [9, 19, 29, 39]
         }
+        
+        self.max_depth = max_depth
         
         self.encoder = encoder
         self.pretrained = DINOv2(model_name=encoder)
@@ -178,20 +180,27 @@ class DepthAnythingV2(nn.Module):
         
         features = self.pretrained.get_intermediate_layers(x, self.intermediate_layer_idx[self.encoder], return_class_token=True)
         
+        # depth = self.depth_head(features, patch_h, patch_w) * self.max_depth
+
         depth = self.depth_head(features, patch_h, patch_w)
+
+        distill_feat = depth
+
         depth = F.relu(depth)
         
-        return depth.squeeze(1)
+        return depth.squeeze(1), distill_feat
     
     @torch.no_grad()
     def infer_image(self, raw_image, input_size=518):
         image, (h, w) = self.image2tensor(raw_image, input_size)
         
-        depth = self.forward(image)
+        depth, distill_feat = self.forward(image)
+
+        print(distill_feat)
         
         depth = F.interpolate(depth[:, None], (h, w), mode="bilinear", align_corners=True)[0, 0]
         
-        return depth.cpu().numpy()
+        return depth.cpu().numpy(), distill_feat
     
     def image2tensor(self, raw_image, input_size=518):        
         transform = Compose([
