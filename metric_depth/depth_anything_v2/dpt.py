@@ -195,6 +195,8 @@ class DepthAnythingV2(nn.Module):
         image, (h, w) = self.image2tensor(raw_image, input_size)
         
         depth, distill_feat = self.forward(image)
+
+        print(distill_feat)
         
         depth = F.interpolate(depth[:, None], (h, w), mode="bilinear", align_corners=True)[0, 0]
         
